@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Media Analytics Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef2f7;
+    --card: #ffffff;
+    --sidebar: #ffffff;
+    --accent1: #c0395b;
+    --accent2: #2d5be3;
+    --accent3: #1aac8e;
+    --accent4: #f59e0b;
+    --text: #1a1f36;
+    --muted: #6b7280;
+    --border: #e5e9f0;
+    --blue-bar: #2d5be3;
+    --teal-bar: #38bdf8;
+    --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 13px;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar h2 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filter-group {
+    margin-bottom: 20px;
+  }
+
+  .filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .filter-select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .filter-select:focus {
+    outline: none;
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 3px rgba(45,91,227,0.12);
+  }
+
+  .reset-btn {
+    width: 100%;
+    padding: 8px;
+    background: var(--accent2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s;
+  }
+
+  .reset-btn:hover { background: #1e46c7; }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  .main-header {
+    margin-bottom: 18px;
+  }
+
+  .main-header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .main-header p {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* KPI CARDS */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    line-height: 1.1;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  /* CHART GRID */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .chart-container {
+    position: relative;
+  }
+
+  /* TABLE */
+  .table-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+
+  .table-card .chart-title {
+    margin-bottom: 12px;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .data-table th:hover { color: var(--accent2); }
+
+  .data-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .data-table tr:hover td { background: #f8fafc; }
+
+  .platform-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-facebook { background: #e8edff; color: #2d5be3; }
+  .badge-tiktok { background: #ffe8f0; color: #c0395b; }
+  .badge-youtube { background: #fff0e8; color: #d95b00; }
+  .badge-twitter { background: #e8f8f5; color: #1aac8e; }
+
+  .no-data {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* Sort indicator */
+  .sort-asc::after { content: ' ↑'; }
+  .sort-desc::after { content: ' ↓'; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR FILTERS -->
+  <aside class="sidebar">
+    <h2>Filters</h2>
+
+    <div class="filter-group">
+      <label class="filter-label">Date of Collection</label>
+      <select class="filter-select" id="f-date">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Influencer Name</label>
+      <select class="filter-select" id="f-influencer">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Influencer Gender</label>
+      <select class="filter-select" id="f-gender">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Religion</label>
+      <select class="filter-select" id="f-religion">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Theme</label>
+      <select class="filter-select" id="f-theme">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Platform</label>
+      <select class="filter-select" id="f-platform">
+        <option value="all">All</option>
+      </select>
+    </div>
+
+    <button class="reset-btn" onclick="resetFilters()">Reset Filters</button>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="main-header">
+      <h1>Social Media Analytics</h1>
+      <p>Campaign performance dashboard — <span id="record-count">0</span> records shown</p>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-impressions">—</div>
+        <div class="kpi-label">Total Impressions</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-reach">—</div>
+        <div class="kpi-label">Total Reach</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-engagements">—</div>
+        <div class="kpi-label">Total Engagements</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-engrate">—</div>
+        <div class="kpi-label">Avg Engagement Rate</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value" id="kpi-views">—</div>
+        <div class="kpi-label">Total Video Views</div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Impressions and Reach by Platform</div>
+        <div class="chart-container" style="height:200px">
+          <canvas id="chart-platform"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Engagement Metrics per Post by Influencer</div>
+        <div class="chart-container" style="height:200px">
+          <canvas id="chart-influencer"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="chart-grid" style="margin-bottom:14px">
+      <div class="chart-card">
+        <div class="chart-title">Number of Posts by Campaign Theme</div>
+        <div class="chart-container" style="height:180px">
+          <canvas id="chart-theme-posts"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Total Reach Distribution by Theme</div>
+        <div class="chart-container" style="height:180px">
+          <canvas id="chart-theme-reach"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="chart-title">Content Performance Log</div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('name')">Influencer Name</th>
+              <th onclick="sortTable('platform')">Platform</th>
+              <th onclick="sortTable('title')">Title of Content</th>
+              <th onclick="sortTable('theme')">Theme</th>
+              <th onclick="sortTable('impressions')">Impressions</th>
+              <th onclick="sortTable('reach')">Reach</th>
+              <th onclick="sortTable('engagements')">Engagements</th>
+              <th onclick="sortTable('gendertop')">Gender Top</th>
+              <th onclick="sortTable('engrate')">Eng Rate</th>
+              <th onclick="sortTable('date')">Date Posted</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ---- RAW DATA (cleaned, row 0 removed as outlier) ----
+const rawData = [
+  {
+    name: "Test1", gender: "Female", religion: "Christian",
+    collectionDate: "2026-03-16", title: "Livestream discussion on family planning",
+    theme: "Family Planning (FP)", postDate: "2026-02-23", platform: "Facebook",
+    impressions: 2391, reach: 1967, likes: 483, comments: 39, shares: 35, clicks: 0, saves: 15, views: 0,
+    gendertop: "Females", engagements: 557
+  },
+  {
+    name: "Test2", gender: "Female", religion: "Christian",
+    collectionDate: "2026-03-09", title: "Community visit photos",
+    theme: "Gender-Based Violence (SGBV)", postDate: "2026-02-25", platform: "TikTok",
+    impressions: 11043, reach: 9403, likes: 1043, comments: 981, shares: 731, clicks: 821, saves: 249, views: 0,
+    gendertop: "Females", engagements: 2755
+  },
+  {
+    name: "Test1", gender: "Female", religion: "Christian",
+    collectionDate: "2026-03-07", title: "Discussion on gender equality",
+    theme: "Gender Equality (GE)", postDate: "2026-03-02", platform: "YouTube",
+    impressions: 4921, reach: 4102, likes: 301, comments: 405, shares: 91, clicks: 94, saves: 0, views: 4921,
+    gendertop: "Males", engagements: 797
+  },
+  {
+    name: "Test3", gender: "Female", religion: "Christian",
+    collectionDate: "2026-03-04", title: "Debate on GBV",
+    theme: "Gender-Based Violence (SGBV)", postDate: "2026-03-04", platform: "Facebook",
+    impressions: 21039, reach: 15029, likes: 3021, comments: 401, shares: 492, clicks: 11021, saves: 503, views: 12039,
+    gendertop: "Females", engagements: 3914
+  },
+  {
+    name: "DV", gender: "Male", religion: "Muslim",
+    collectionDate: "2026-03-10", title: "GBV",
+    theme: "Gender-Based Violence (SGBV)", postDate: "2026-03-09", platform: "TikTok",
+    impressions: 5, reach: 10, likes: 5, comments: 7, shares: 1, clicks: 1, saves: 1, views: 1,
+    gendertop: "Females", engagements: 13
+  },
+  {
+    name: "DV", gender: "Male", religion: "Muslim",
+    collectionDate: "2026-03-10", title: "FPr",
+    theme: "Gender-Based Violence (SGBV)", postDate: "2026-03-06", platform: "Twitter (X)",
+    impressions: 3, reach: 3, likes: 3, comments: 3, shares: 3, clicks: 3, saves: 3, views: 3,
+    gendertop: "Males", engagements: 9
+  }
+];
+
+// ---- CHARTS ----
+let chartPlatform, chartInfluencer, chartThemePosts, chartThemeReach;
+let sortCol = null, sortDir = 1;
+
+const THEME_COLORS = {
+  "Gender-Based Violence (SGBV)": "#c0395b",
+  "Family Planning (FP)": "#2d5be3",
+  "Gender Equality (GE)": "#1aac8e"
+};
+
+const PLATFORM_COLORS = {
+  "Facebook": "#2d5be3",
+  "TikTok": "#c0395b",
+  "YouTube": "#d95b00",
+  "Twitter (X)": "#1aac8e"
+};
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function getPlatformBadge(p) {
+  const map = { Facebook: 'badge-facebook', TikTok: 'badge-tiktok', YouTube: 'badge-youtube', 'Twitter (X)': 'badge-twitter' };
+  return `<span class="platform-badge ${map[p]||''}">${p}</span>`;
+}
+
+function getFiltered() {
+  const fd = document.getElementById('f-date').value;
+  const fi = document.getElementById('f-influencer').value;
+  const fg = document.getElementById('f-gender').value;
+  const fr = document.getElementById('f-religion').value;
+  const ft = document.getElementById('f-theme').value;
+  const fp = document.getElementById('f-platform').value;
+
+  return rawData.filter(d => {
+    if (fd !== 'all' && d.collectionDate !== fd) return false;
+    if (fi !== 'all' && d.name !== fi) return false;
+    if (fg !== 'all' && d.gender !== fg) return false;
+    if (fr !== 'all' && d.religion !== fr) return false;
+    if (ft !== 'all' && d.theme !== ft) return false;
+    if (fp !== 'all' && d.platform !== fp) return false;
+    return true;
+  });
+}
+
+function populateFilters() {
+  const sets = {
+    'f-date': [...new Set(rawData.map(d=>d.collectionDate))].sort(),
+    'f-influencer': [...new Set(rawData.map(d=>d.name))].sort(),
+    'f-gender': [...new Set(rawData.map(d=>d.gender))].sort(),
+    'f-religion': [...new Set(rawData.map(d=>d.religion))].sort(),
+    'f-theme': [...new Set(rawData.map(d=>d.theme))].sort(),
+    'f-platform': [...new Set(rawData.map(d=>d.platform))].sort(),
+  };
+  for (const [id, vals] of Object.entries(sets)) {
+    const sel = document.getElementById(id);
+    vals.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', update);
+  }
+}
+
+function updateKPIs(data) {
+  const totalImpr = data.reduce((s,d)=>s+d.impressions,0);
+  const totalReach = data.reduce((s,d)=>s+d.reach,0);
+  const totalEng = data.reduce((s,d)=>s+d.engagements,0);
+  const totalViews = data.reduce((s,d)=>s+d.views,0);
+  const avgEngRate = data.length ? data.reduce((s,d)=>s+(d.reach>0?d.engagements/d.reach:0),0)/data.length : 0;
+
+  document.getElementById('kpi-impressions').textContent = fmt(totalImpr);
+  document.getElementById('kpi-reach').textContent = fmt(totalReach);
+  document.getElementById('kpi-engagements').textContent = fmt(totalEng);
+  document.getElementById('kpi-engrate').textContent = (avgEngRate*100).toFixed(0) + '%';
+  document.getElementById('kpi-views').textContent = fmt(totalViews);
+  document.getElementById('record-count').textContent = data.length;
+}
+
+function updateChartPlatform(data) {
+  const platforms = [...new Set(data.map(d=>d.platform))];
+  const impressions = platforms.map(p => data.filter(d=>d.platform===p).reduce((s,d)=>s+d.impressions,0));
+  const reach = platforms.map(p => data.filter(d=>d.platform===p).reduce((s,d)=>s+d.reach,0));
+
+  if (chartPlatform) chartPlatform.destroy();
+  chartPlatform = new Chart(document.getElementById('chart-platform'), {
+    type: 'bar',
+    data: {
+      labels: platforms,
+      datasets: [
+        { label: 'Impressions', data: impressions, backgroundColor: '#2d5be3', borderRadius: 4 },
+        { label: 'Reach', data: reach, backgroundColor: '#38bdf8', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 10 } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 } } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { font: { family: 'DM Sans', size: 10 }, callback: v => fmt(v) } }
+      }
+    }
+  });
+}
+
+function updateChartInfluencer(data) {
+  const names = [...new Set(data.map(d=>d.name))];
+  const clicks = names.map(n => data.filter(d=>d.name===n).reduce((s,d)=>s+d.clicks,0));
+  const likes = names.map(n => data.filter(d=>d.name===n).reduce((s,d)=>s+d.likes,0));
+  const comments = names.map(n => data.filter(d=>d.name===n).reduce((s,d)=>s+d.comments,0));
+  const shares = names.map(n => data.filter(d=>d.name===n).reduce((s,d)=>s+d.shares,0));
+
+  if (chartInfluencer) chartInfluencer.destroy();
+  chartInfluencer = new Chart(document.getElementById('chart-influencer'), {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        { label: 'Clicks', data: clicks, backgroundColor: '#2d5be3', borderRadius: 3 },
+        { label: 'Likes/reactions', data: likes, backgroundColor: '#38bdf8', borderRadius: 3 },
+        { label: 'Comments', data: comments, backgroundColor: '#f97316', borderRadius: 3 },
+        { label: 'Shares/retweets', data: shares, backgroundColor: '#1aac8e', borderRadius: 3 }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 10 } } },
+      scales: {
+        x: { stacked: true, grid: { color: '#f0f0f0' }, ticks: { font: { family: 'DM Sans', size: 10 }, callback: v => fmt(v) } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 11 } } }
+      }
+    }
+  });
+}
+
+function updateChartThemePosts(data) {
+  const themes = [...new Set(data.map(d=>d.theme))];
+  const counts = themes.map(t => data.filter(d=>d.theme===t).length);
+  const colors = themes.map(t => THEME_COLORS[t] || '#999');
+
+  if (chartThemePosts) chartThemePosts.destroy();
+  chartThemePosts = new Chart(document.getElementById('chart-theme-posts'), {
+    type: 'bar',
+    data: {
+      labels: themes,
+      datasets: [{ data: counts, backgroundColor: colors, borderRadius: 5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 10 }, maxRotation: 15 } },
+        y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { font: { family: 'DM Sans', size: 10 }, stepSize: 1 } }
+      }
+    }
+  });
+}
+
+function updateChartThemeReach(data) {
+  const themes = [...new Set(data.map(d=>d.theme))];
+  const reaches = themes.map(t => data.filter(d=>d.theme===t).reduce((s,d)=>s+d.reach,0));
+  const colors = themes.map(t => THEME_COLORS[t] || '#999');
+
+  if (chartThemeReach) chartThemeReach.destroy();
+  chartThemeReach = new Chart(document.getElementById('chart-theme-reach'), {
+    type: 'bar',
+    data: {
+      labels: themes,
+      datasets: [{ data: reaches, backgroundColor: colors, borderRadius: 5 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#f0f0f0' }, ticks: { font: { family: 'DM Sans', size: 10 }, callback: v => fmt(v) } },
+        y: { grid: { display: false }, ticks: { font: { family: 'DM Sans', size: 10 } } }
+      }
+    }
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+
+  // Update header indicators
+  document.querySelectorAll('.data-table th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+  });
+  const thMap = { name:0, platform:1, title:2, theme:3, impressions:4, reach:5, engagements:6, gendertop:7, engrate:8, date:9 };
+  const idx = thMap[col];
+  const ths = document.querySelectorAll('.data-table th');
+  if (ths[idx]) ths[idx].classList.add(sortDir===1?'sort-asc':'sort-desc');
+
+  update();
+}
+
+function updateTable(data) {
+  let sorted = [...data];
+  const keyMap = {
+    name: d=>d.name, platform: d=>d.platform, title: d=>d.title,
+    theme: d=>d.theme, impressions: d=>d.impressions, reach: d=>d.reach,
+    engagements: d=>d.engagements, gendertop: d=>d.gendertop,
+    engrate: d=>(d.reach>0?d.engagements/d.reach:0), date: d=>d.postDate
+  };
+
+  if (sortCol && keyMap[sortCol]) {
+    sorted.sort((a,b) => {
+      const va = keyMap[sortCol](a), vb = keyMap[sortCol](b);
+      return (va < vb ? -1 : va > vb ? 1 : 0) * sortDir;
+    });
+  }
+
+  const tbody = document.getElementById('table-body');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="10" class="no-data">No data matches the current filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(d => {
+    const engRate = d.reach > 0 ? Math.round(d.engagements/d.reach*100)+'%' : '—';
+    const dateStr = d.postDate;
+    return `<tr>
+      <td><strong>${d.name}</strong></td>
+      <td>${getPlatformBadge(d.platform)}</td>
+      <td>${d.title}</td>
+      <td style="color:${THEME_COLORS[d.theme]||'inherit'};font-weight:500">${d.theme}</td>
+      <td style="font-family:'DM Mono',monospace">${d.impressions.toLocaleString()}</td>
+      <td style="font-family:'DM Mono',monospace">${d.reach.toLocaleString()}</td>
+      <td style="font-family:'DM Mono',monospace">${d.engagements.toLocaleString()}</td>
+      <td>${d.gendertop}</td>
+      <td style="font-weight:600">${engRate}</td>
+      <td style="color:var(--muted)">${dateStr}</td>
+    </tr>`;
+  }).join('');
+}
+
+function update() {
+  const data = getFiltered();
+  updateKPIs(data);
+  updateChartPlatform(data);
+  updateChartInfluencer(data);
+  updateChartThemePosts(data);
+  updateChartThemeReach(data);
+  updateTable(data);
+}
+
+function resetFilters() {
+  ['f-date','f-influencer','f-gender','f-religion','f-theme','f-platform']
+    .forEach(id => document.getElementById(id).value = 'all');
+  sortCol = null; sortDir = 1;
+  update();
+}
+
+// INIT
+populateFilters();
+update();
+</script>
+</body>
+</html>
